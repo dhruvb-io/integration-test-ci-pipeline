@@ -1,9 +1,10 @@
+import os
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 
-# Configure SQLite database (saves to 'app.db' in your project folder)
+# Configure SQLite database (saves to 'instance/app.db')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -17,9 +18,12 @@ class User(db.Model):
     def to_dict(self):
         return {"id": self.id, "name": self.name}
 
-# Create database tables automatically when app starts
+
+# Create instance directory & database tables automatically on launch
 with app.app_context():
+    os.makedirs(app.instance_path, exist_ok=True)
     db.create_all()
+
 
 # --- ROUTES ---
 
@@ -36,14 +40,14 @@ def health_check():
 # GET all users from database
 @app.route('/users', methods=['GET'])
 def get_users():
-    users = User.query.all()
+    users = db.session.scalars(db.select(User)).all()
     return jsonify([user.to_dict() for user in users]), 200
 
 
 # GET single user by ID from database
 @app.route('/users/<int:user_id>', methods=['GET'])
 def get_user(user_id):
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return jsonify({"error": "Not Found", "message": "User not found"}), 404
     return jsonify(user.to_dict()), 200
@@ -58,7 +62,7 @@ def create_user():
         
     new_user = User(name=data['name'])
     db.session.add(new_user)
-    db.session.commit()  # Saves permanently to app.db
+    db.session.commit()  # Saves permanently to database
     
     return jsonify({"message": "User created!", "user": new_user.to_dict()}), 201
 
