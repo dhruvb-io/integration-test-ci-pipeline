@@ -18,19 +18,28 @@ pipeline {
         stage('Verify Environment') {
             steps {
                 sh '''
+                echo "===== Environment ====="
                 echo "PATH=$PATH"
 
+                echo ""
                 echo "Python:"
                 command -v $PYTHON
                 $PYTHON --version
 
+                echo ""
                 echo "Node:"
                 command -v node
                 node --version
 
+                echo ""
                 echo "NPM:"
                 command -v npm
                 npm --version
+
+                echo ""
+                echo "Newman:"
+                command -v newman
+                newman --version
                 '''
             }
         }
@@ -38,23 +47,14 @@ pipeline {
         stage('Set Up Python Environment') {
             steps {
                 sh '''
+                rm -rf $VENV
+
                 $PYTHON -m venv $VENV
 
-                $VENV/bin/python --version
+                $VENV/bin/python3.13 --version
 
-                $VENV/bin/python -m pip install --upgrade pip
+                $VENV/bin/python3.13 -m pip install --upgrade pip
                 $VENV/bin/pip install -r requirements.txt
-                '''
-            }
-        }
-
-        stage('Install Newman') {
-            steps {
-                sh '''
-                npm install -g newman
-
-                echo "Newman Version:"
-                newman --version
                 '''
             }
         }
@@ -62,7 +62,7 @@ pipeline {
         stage('Start Flask Server') {
             steps {
                 sh '''
-                nohup $VENV/bin/python app.py > flask.log 2>&1 &
+                nohup $VENV/bin/python3.13 app.py > flask.log 2>&1 &
                 sleep 5
                 '''
             }
