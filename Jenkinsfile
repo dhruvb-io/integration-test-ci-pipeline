@@ -4,6 +4,7 @@ pipeline {
     environment {
         PYTHON = "/opt/homebrew/bin/python3.13"
         VENV = "venv"
+    }
 
     stages {
 
@@ -16,9 +17,10 @@ pipeline {
         stage('Set Up Python Environment') {
             steps {
                 sh '''
-                $PYTHON -m venv venv
+                $PYTHON -m venv $VENV
                 . $VENV/bin/activate
 
+                python --version
                 python -m pip install --upgrade pip
                 pip install -r requirements.txt
                 '''
@@ -36,7 +38,7 @@ pipeline {
         stage('Start Flask Server') {
             steps {
                 sh '''
-                . venv/bin/activate
+                . $VENV/bin/activate
 
                 nohup python app.py > flask.log 2>&1 &
                 sleep 3
