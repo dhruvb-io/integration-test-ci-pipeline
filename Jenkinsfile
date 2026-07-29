@@ -3,6 +3,9 @@ pipeline {
 
     environment {
         PYTHON = "/opt/homebrew/bin/python3.13"
+        NODE = "/opt/homebrew/bin/node"
+        NPM = "/opt/homebrew/bin/npm"
+        NEWMAN = "/usr/local/bin/newman"
         VENV = "venv"
     }
 
@@ -30,7 +33,7 @@ pipeline {
         stage('Install Newman') {
             steps {
                 sh '''
-                npm install -g newman
+                $NPM install -g newman
                 '''
             }
         }
@@ -49,7 +52,7 @@ pipeline {
         stage('Run Newman Integration Tests') {
             steps {
                 sh '''
-                newman run collection.json
+                $NEWMAN run collection.json
                 '''
             }
         }
