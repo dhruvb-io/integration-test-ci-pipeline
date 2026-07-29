@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    environment {
+        PYTHON = "/opt/homebrew/bin/python3.13"
+        VENV = "venv"
+
     stages {
 
         stage('Checkout Repository') {
@@ -12,8 +16,8 @@ pipeline {
         stage('Set Up Python Environment') {
             steps {
                 sh '''
-                python3 -m venv venv
-                . venv/bin/activate
+                $PYTHON -m venv venv
+                . $VENV/bin/activate
 
                 python -m pip install --upgrade pip
                 pip install -r requirements.txt
