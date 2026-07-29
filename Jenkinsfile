@@ -1,0 +1,65 @@
+pipeline {
+    agent any
+
+    stages {
+
+        stage('Checkout Repository') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Set Up Python Environment') {
+            steps {
+                sh '''
+                python3 -m venv venv
+                . venv/bin/activate
+
+                python -m pip install --upgrade pip
+                pip install -r requirements.txt
+                '''
+            }
+        }
+
+        stage('Install Newman') {
+            steps {
+                sh '''
+                npm install -g newman
+                '''
+            }
+        }
+
+        stage('Start Flask Server') {
+            steps {
+                sh '''
+                . venv/bin/activate
+
+                nohup python app.py > flask.log 2>&1 &
+                sleep 3
+                '''
+            }
+        }
+
+        stage('Run Newman Integration Tests') {
+            steps {
+                sh '''
+                newman run collection.json
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'flask.log', allowEmptyArchive: true
+        }
+
+        success {
+            echo 'API Integration Tests Passed'
+        }
+
+        failure {
+            echo 'API Integration Tests Failed'
+        }
+    }
+}

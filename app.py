@@ -1,5 +1,5 @@
 import os
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -25,16 +25,37 @@ with app.app_context():
     db.create_all()
 
 
-# --- ROUTES ---
+# ----------------------------
+# ROUTES
+# ----------------------------
 
-@app.route('/', methods=['GET'])
+# NEW - HTML Home Page
+@app.route("/", methods=["GET"])
 def home():
-    return jsonify({"message": "Welcome to the API!"}), 200
+    return render_template("index.html")
+
+
+# NEW - Form submission for Selenium/UI
+@app.route("/create-user", methods=["POST"])
+def create_user_form():
+    name = request.form.get("name")
+
+    if not name:
+        return "Name is required", 400
+
+    new_user = User(name=name)
+    db.session.add(new_user)
+    db.session.commit()
+
+    return redirect(url_for("get_users"))
 
 
 @app.route('/health', methods=['GET'])
 def health_check():
-    return jsonify({"status": "healthy", "message": "App is up and running!"}), 200
+    return jsonify({
+        "status": "healthy",
+        "message": "App is up and running!"
+    }), 200
 
 
 # GET all users from database
@@ -48,33 +69,52 @@ def get_users():
 @app.route('/users/<int:user_id>', methods=['GET'])
 def get_user(user_id):
     user = db.session.get(User, user_id)
+
     if not user:
-        return jsonify({"error": "Not Found", "message": "User not found"}), 404
+        return jsonify({
+            "error": "Not Found",
+            "message": "User not found"
+        }), 404
+
     return jsonify(user.to_dict()), 200
 
 
-# POST create user and save to database
+# API endpoint (used by Postman/Newman)
 @app.route('/users', methods=['POST'])
 def create_user():
     data = request.get_json()
+
     if not data or 'name' not in data:
-        return jsonify({"error": "Bad Request", "message": "Please provide a 'name'"}), 400
-        
+        return jsonify({
+            "error": "Bad Request",
+            "message": "Please provide a 'name'"
+        }), 400
+
     new_user = User(name=data['name'])
     db.session.add(new_user)
-    db.session.commit()  # Saves permanently to database
-    
-    return jsonify({"message": "User created!", "user": new_user.to_dict()}), 201
+    db.session.commit()
+
+    return jsonify({
+        "message": "User created!",
+        "user": new_user.to_dict()
+    }), 201
 
 
-# --- ERROR HANDLERS ---
+# ----------------------------
+# ERROR HANDLERS
+# ----------------------------
 
 @app.errorhandler(404)
 def not_found_error(error):
-    return jsonify({"error": "Not Found", "message": "The requested URL was not found."}), 404
+    return jsonify({
+        "error": "Not Found",
+        "message": "The requested URL was not found."
+    }), 404
 
 
-# --- SERVER RUNNER ---
+# ----------------------------
+# SERVER RUNNER
+# ----------------------------
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5001, debug=True)
