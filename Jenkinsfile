@@ -3,10 +3,8 @@ pipeline {
 
     environment {
         PYTHON = "/opt/homebrew/bin/python3.13"
-        NODE = "/opt/homebrew/bin/node"
-        NPM = "/usr/local/bin/npm"
-        NEWMAN = "/usr/local/bin/newman"
         VENV = "venv"
+        PATH = "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
     }
 
     stages {
@@ -17,15 +15,35 @@ pipeline {
             }
         }
 
+        stage('Verify Environment') {
+            steps {
+                sh '''
+                echo "PATH=$PATH"
+
+                echo "Python:"
+                command -v $PYTHON
+                $PYTHON --version
+
+                echo "Node:"
+                command -v node
+                node --version
+
+                echo "NPM:"
+                command -v npm
+                npm --version
+                '''
+            }
+        }
+
         stage('Set Up Python Environment') {
             steps {
                 sh '''
                 $PYTHON -m venv $VENV
-                . $VENV/bin/activate
 
-                python --version
-                python -m pip install --upgrade pip
-                pip install -r requirements.txt
+                $VENV/bin/python --version
+
+                $VENV/bin/python -m pip install --upgrade pip
+                $VENV/bin/pip install -r requirements.txt
                 '''
             }
         }
@@ -33,7 +51,10 @@ pipeline {
         stage('Install Newman') {
             steps {
                 sh '''
-                $NPM install -g newman
+                npm install -g newman
+
+                echo "Newman Version:"
+                newman --version
                 '''
             }
         }
@@ -41,10 +62,8 @@ pipeline {
         stage('Start Flask Server') {
             steps {
                 sh '''
-                . $VENV/bin/activate
-
-                nohup python app.py > flask.log 2>&1 &
-                sleep 3
+                nohup $VENV/bin/python app.py > flask.log 2>&1 &
+                sleep 5
                 '''
             }
         }
@@ -52,7 +71,7 @@ pipeline {
         stage('Run Newman Integration Tests') {
             steps {
                 sh '''
-                $NEWMAN run collection.json
+                newman run collection.json
                 '''
             }
         }
