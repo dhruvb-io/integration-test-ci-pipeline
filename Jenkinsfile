@@ -4,7 +4,7 @@ pipeline {
     environment {
         PYTHON = "/opt/homebrew/bin/python3.13"
         NODE = "/opt/homebrew/bin/node"
-        NPM = "/opt/homebrew/bin/npm"
+        NPM = "/usr/local/bin/npm"
         NEWMAN = "/usr/local/bin/newman"
         VENV = "venv"
     }
